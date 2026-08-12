@@ -1,0 +1,5 @@
+id,username,email,password,full_name,role,branch_code,status
+1,admin,admin@bank.com,$2a$10$e8p1mD8fF9Hj0m8qJ/5u8.x7J3V1p9q2u4t5r6w7x8y9z0a1b2c3d,Quản Trị Viên Hệ Thống,ADMIN,BRANCH_HO,ACTIVE
+2,teller01,teller01@bank.com,$2a$10$e8p1mD8fF9Hj0m8qJ/5u8.x7J3V1p9q2u4t5r6w7x8y9z0a1b2c3d,Giao Dịch Viên Nguyễn Văn A,TELLER,BRANCH_001,ACTIVE
+3,credit_officer,officer@bank.com,$2a$10$e8p1mD8fF9Hj0m8qJ/5u8.x7J3V1p9q2u4t5r6w7x8y9z0a1b2c3d,Cán Bộ Tín Dụng Trần Thị B,CREDIT_OFFICER,BRANCH_001,ACTIVE
+4,branch_manager,manager@bank.com,$2a$10$e8p1mD8fF9Hj0m8qJ/5u8.x7J3V1p9q2u4t5r6w7x8y9z0a1b2c3d,Giám Đốc Chi Nhánh Lê Văn C,BRANCH_MANAGER,BRANCH_001,ACTIVE

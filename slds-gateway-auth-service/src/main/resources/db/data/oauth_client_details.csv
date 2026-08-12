@@ -1,0 +1,3 @@
+client_id,resource_ids,client_secret,scope,authorized_grant_types,web_server_redirect_uri,authorities,access_token_validity,refresh_token_validity,additional_information,autoapprove
+slds-web-app,slds-resource,$2a$10$e8p1mD8fF9Hj0m8qJ/5u8.x7J3V1p9q2u4t5r6w7x8y9z0a1b2c3d,read;write,authorization_code;password;refresh_token;client_credentials,http://localhost:8080/login/oauth2/code/slds,ROLE_USER;ROLE_ADMIN,3600,86400,{},true
+slds-mobile-app,slds-resource,$2a$10$e8p1mD8fF9Hj0m8qJ/5u8.x7J3V1p9q2u4t5r6w7x8y9z0a1b2c3d,read;write,password;refresh_token,http://localhost:8080/oauth/callback,ROLE_USER,3600,86400,{},true

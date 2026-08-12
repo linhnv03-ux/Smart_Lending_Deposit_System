@@ -1,6 +1,6 @@
-package com.bank.slds.loan.config;
+package com.bank.slds.deposit.config;
 
-import com.bank.slds.loan.security.JwtAuthenticationFilter;
+import com.bank.slds.deposit.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +26,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/loans/**", "/v3/api-docs/**", "/swagger-ui/**", "/actuator/**").permitAll()
+                .requestMatchers("/api/v1/deposits/**", "/v3/api-docs/**", "/swagger-ui/**", "/actuator/**").permitAll()
                 .anyRequest().permitAll()
             );
 

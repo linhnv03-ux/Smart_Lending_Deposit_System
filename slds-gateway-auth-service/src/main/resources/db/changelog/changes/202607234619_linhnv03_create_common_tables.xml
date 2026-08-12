@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- 1. Bảng Cán bộ Ngân hàng (Bank Staffs / Users) -->
+    <changeSet author="linhnv03" id="202607234619-1">
+        <createTable tableName="users">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="username" type="VARCHAR(50)">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(100)">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column name="password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="full_name" type="VARCHAR(100)"/>
+            <column name="role" type="VARCHAR(30)" defaultValue="CREDIT_OFFICER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="branch_code" type="VARCHAR(20)" defaultValue="BRANCH_HO">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)" defaultValue="ACTIVE"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <!-- 2. Bảng OAuth Client Ngân hàng -->
+    <changeSet author="linhnv03" id="202607234619-2">
+        <createTable tableName="oauth_client_details">
+            <column name="client_id" type="VARCHAR(256)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="resource_ids" type="VARCHAR(256)"/>
+            <column name="client_secret" type="VARCHAR(256)"/>
+            <column name="scope" type="VARCHAR(256)"/>
+            <column name="authorized_grant_types" type="VARCHAR(256)"/>
+            <column name="web_server_redirect_uri" type="VARCHAR(256)"/>
+            <column name="authorities" type="VARCHAR(256)"/>
+            <column name="access_token_validity" type="INT"/>
+            <column name="refresh_token_validity" type="INT"/>
+            <column name="additional_information" type="VARCHAR(4096)"/>
+            <column name="autoapprove" type="VARCHAR(256)"/>
+        </createTable>
+    </changeSet>
+
+    <!-- 3. Bảng OAuth Access Token -->
+    <changeSet author="linhnv03" id="202607234619-3">
+        <createTable tableName="oauth_access_token">
+            <column name="token_id" type="VARCHAR(256)"/>
+            <column name="token" type="BLOB"/>
+            <column name="authentication_id" type="VARCHAR(256)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_name" type="VARCHAR(256)"/>
+            <column name="client_id" type="VARCHAR(256)"/>
+            <column name="authentication" type="BLOB"/>
+            <column name="refresh_token" type="VARCHAR(256)"/>
+        </createTable>
+    </changeSet>
+
+    <!-- 4. Bảng OAuth Refresh Token -->
+    <changeSet author="linhnv03" id="202607234619-4">
+        <createTable tableName="oauth_refresh_token">
+            <column name="token_id" type="VARCHAR(256)"/>
+            <column name="token" type="BLOB"/>
+            <column name="authentication" type="BLOB"/>
+        </createTable>
+    </changeSet>
+
+    <!-- 5. Load Seed Data cho OAuth Client Details -->
+    <changeSet author="linhnv03" id="202607234619-5">
+        <loadData
+                file="db/data/oauth_client_details.csv"
+                tableName="oauth_client_details"
+                relativeToChangelogFile="false">
+            <column name="client_id" type="STRING"/>
+            <column name="resource_ids" type="STRING"/>
+            <column name="client_secret" type="STRING"/>
+            <column name="scope" type="STRING"/>
+            <column name="authorized_grant_types" type="STRING"/>
+            <column name="web_server_redirect_uri" type="STRING"/>
+            <column name="authorities" type="STRING"/>
+            <column name="access_token_validity" type="NUMERIC"/>
+            <column name="refresh_token_validity" type="NUMERIC"/>
+            <column name="additional_information" type="STRING"/>
+            <column name="autoapprove" type="STRING"/>
+        </loadData>
+    </changeSet>
+
+    <!-- 6. Load Seed Data cho Cán bộ Ngân hàng -->
+    <changeSet author="linhnv03" id="202607234619-6">
+        <loadData
+                file="db/data/users.csv"
+                tableName="users"
+                relativeToChangelogFile="false">
+            <column name="id" type="NUMERIC"/>
+            <column name="username" type="STRING"/>
+            <column name="email" type="STRING"/>
+            <column name="password" type="STRING"/>
+            <column name="full_name" type="STRING"/>
+            <column name="role" type="STRING"/>
+            <column name="branch_code" type="STRING"/>
+            <column name="status" type="STRING"/>
+        </loadData>
+    </changeSet>
+
+</databaseChangeLog>
