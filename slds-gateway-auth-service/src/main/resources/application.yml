@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: slds-gateway-auth-service
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:redis_secret}
+
+  cloud:
+    gateway:
+      routes:
+        # Route to Loan Service
+        - id: loan-service-route
+          uri: ${LOAN_SERVICE_URI:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/loans/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10 # 10 requests per second
+                redis-rate-limiter.burstCapacity: 20
+                key-resolver: "#{@userKeyResolver}"
+
+        # Route to Auth Service internal endpoints
+        - id: auth-service-route
+          uri: http://localhost:8080
+          predicates:
+            - Path=/api/v1/auth/**
+
+jwt:
+  secret: slds_super_secret_jwt_key_bank_grade_2026_java17_spring_boot_3
+  expiration-ms: 86400000 # 24 Hours

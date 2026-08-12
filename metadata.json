@@ -1,0 +1,6 @@
+{
+  "name": "Smart Lending & Deposit System",
+  "description": "Smart Lending & Deposit System (SLDS) for Core Banking microservices, incorporating Java 17, Spring Boot 3, Redis caching, ActiveMQ, Resilience4j, and Elasticsearch.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

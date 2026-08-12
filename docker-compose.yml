@@ -1,0 +1,277 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # INFRASTRUCTURE LAYER
+  # ==========================================
+
+  # 1. PostgreSQL Database for Loan & Deposit Services
+  postgres:
+    image: postgres:15-alpine
+    container_name: slds-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: slds_db
+      POSTGRES_USER: slds_user
+      POSTGRES_PASSWORD: slds_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U slds_user -d slds_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - slds-network
+
+  # 2. Redis Cache for Gateway JWT Sessions & Deposit Product Catalog
+  redis:
+    image: redis:7-alpine
+    container_name: slds-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
+    networks:
+      - slds-network
+
+  # 3. Apache ActiveMQ Message Broker for Event-Driven Credit Assessment
+  activemq:
+    image: rmohr/activemq:5.15.9-alpine
+    container_name: slds-activemq
+    restart: unless-stopped
+    ports:
+      - "61616:61616" # JMS OpenWire Port
+      - "8161:8161"   # Admin Web Console (admin / admin)
+    environment:
+      ACTIVEMQ_ADMIN_USER: admin
+      ACTIVEMQ_ADMIN_PASSWORD: admin
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 61616 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - activemq_data:/opt/activemq/data
+    networks:
+      - slds-network
+
+  # 4. Elasticsearch Engine for Credit Scoring Audit Trail Search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    container_name: slds-elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cat/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - slds-network
+
+  # 5. Core Banking Oracle Database Container (Simulation Layer)
+  oracle-core-db:
+    image: gvenzl/oracle-free:23.3-slim-faststart
+    container_name: slds-oracle-core-db
+    restart: unless-stopped
+    ports:
+      - "1521:1521"
+    environment:
+      ORACLE_PASSWORD: oracle_password
+      APP_USER: core_bank
+      APP_USER_PASSWORD: core_password
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+    networks:
+      - slds-network
+
+  # ==========================================
+  # MICROSERVICES LAYER (SPRING BOOT 3)
+  # ==========================================
+
+  # Service 1: API Gateway & Auth Service (JWT Authentication & Rate Limiting)
+  slds-gateway-auth-service:
+    build:
+      context: .
+      dockerfile: slds-gateway-auth-service/Dockerfile
+    container_name: slds-gateway-auth-service
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - LOAN_SERVICE_URL=http://slds-loan-service:8081
+      - DEPOSIT_SERVICE_URL=http://slds-deposit-service:8082
+      - ASSESSMENT_SERVICE_URL=http://slds-credit-assessment-service:8083
+      - CORE_BANKING_SERVICE_URL=http://slds-core-banking-adapter-service:8084
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - slds-network
+
+  # Service 2: Loan Microservice (Applications, Interest Strategies, Disbursement)
+  slds-loan-service:
+    build:
+      context: .
+      dockerfile: slds-loan-service/Dockerfile
+    container_name: slds-loan-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/slds_db
+      - SPRING_DATASOURCE_USERNAME=slds_user
+      - SPRING_DATASOURCE_PASSWORD=slds_password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_ACTIVEMQ_BROKER_URL=tcp://activemq:61616
+      - CORE_BANKING_ADAPTER_URL=http://slds-core-banking-adapter-service:8084
+      - ASSESSMENT_SERVICE_URL=http://slds-credit-assessment-service:8083
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      activemq:
+        condition: service_healthy
+    networks:
+      - slds-network
+
+  # Service 3: Deposit Microservice (Savings Accounts, Interest Schedules, Early Closure)
+  slds-deposit-service:
+    build:
+      context: .
+      dockerfile: slds-deposit-service/Dockerfile
+    container_name: slds-deposit-service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/slds_db
+      - SPRING_DATASOURCE_USERNAME=slds_user
+      - SPRING_DATASOURCE_PASSWORD=slds_password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - CORE_BANKING_ADAPTER_URL=http://slds-core-banking-adapter-service:8084
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - slds-network
+
+  # Service 4: Credit Assessment Microservice (Async ActiveMQ Consumer, Scoring, ES Logs)
+  slds-credit-assessment-service:
+    build:
+      context: .
+      dockerfile: slds-credit-assessment-service/Dockerfile
+    container_name: slds-credit-assessment-service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_ACTIVEMQ_BROKER_URL=tcp://activemq:61616
+      - ELASTICSEARCH_URIS=http://elasticsearch:9200
+    depends_on:
+      activemq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - slds-network
+
+  # Service 5: Core Banking Adapter Microservice (Oracle DB Posting, Resilience4j Circuit Breaker)
+  slds-core-banking-adapter-service:
+    build:
+      context: .
+      dockerfile: slds-core-banking-adapter-service/Dockerfile
+    container_name: slds-core-banking-adapter-service
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@oracle-core-db:1521/FREEPDB1
+      - SPRING_DATASOURCE_USERNAME=core_bank
+      - SPRING_DATASOURCE_PASSWORD=core_password
+    depends_on:
+      - oracle-core-db
+    networks:
+      - slds-network
+
+  # ==========================================
+  # WEB DASHBOARD & INTERACTIVE API PROXY LAYER
+  # ==========================================
+  slds-web-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: slds-web-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - SPRING_PROFILES_ACTIVE=prod
+      - GATEWAY_SERVICE_URL=http://slds-gateway-auth-service:8080
+      - LOAN_SERVICE_URL=http://slds-loan-service:8081
+      - DEPOSIT_SERVICE_URL=http://slds-deposit-service:8082
+      - ASSESSMENT_SERVICE_URL=http://slds-credit-assessment-service:8083
+      - CORE_BANKING_SERVICE_URL=http://slds-core-banking-adapter-service:8084
+      - POSTGRES_URL=jdbc:postgresql://postgres:5432/slds_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ACTIVEMQ_BROKER_URL=tcp://activemq:61616
+      - ELASTICSEARCH_URIS=http://elasticsearch:9200
+    depends_on:
+      - postgres
+      - redis
+      - activemq
+      - elasticsearch
+      - oracle-core-db
+      - slds-gateway-auth-service
+      - slds-loan-service
+      - slds-deposit-service
+      - slds-credit-assessment-service
+      - slds-core-banking-adapter-service
+    networks:
+      - slds-network
+
+networks:
+  slds-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  activemq_data:
+  es_data:
+  oracle_data:
