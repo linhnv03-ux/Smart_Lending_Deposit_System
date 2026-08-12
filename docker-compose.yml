@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ==========================================
   # INFRASTRUCTURE LAYER
@@ -111,7 +109,7 @@ services:
   slds-gateway-auth-service:
     build:
       context: .
-      dockerfile: slds-gateway-auth-service/Dockerfile
+      dockerfile: ./slds-gateway-auth-service/Dockerfile
     container_name: slds-gateway-auth-service
     restart: unless-stopped
     ports:
@@ -134,7 +132,7 @@ services:
   slds-loan-service:
     build:
       context: .
-      dockerfile: slds-loan-service/Dockerfile
+      dockerfile: ./slds-loan-service/Dockerfile
     container_name: slds-loan-service
     restart: unless-stopped
     ports:
@@ -164,7 +162,7 @@ services:
   slds-deposit-service:
     build:
       context: .
-      dockerfile: slds-deposit-service/Dockerfile
+      dockerfile: ./slds-deposit-service/Dockerfile
     container_name: slds-deposit-service
     restart: unless-stopped
     ports:
@@ -190,7 +188,7 @@ services:
   slds-credit-assessment-service:
     build:
       context: .
-      dockerfile: slds-credit-assessment-service/Dockerfile
+      dockerfile: ./slds-credit-assessment-service/Dockerfile
     container_name: slds-credit-assessment-service
     restart: unless-stopped
     ports:
@@ -211,7 +209,7 @@ services:
   slds-core-banking-adapter-service:
     build:
       context: .
-      dockerfile: slds-core-banking-adapter-service/Dockerfile
+      dockerfile: ./slds-core-banking-adapter-service/Dockerfile
     container_name: slds-core-banking-adapter-service
     restart: unless-stopped
     ports:
@@ -232,7 +230,7 @@ services:
   slds-web-app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./Dockerfile
     container_name: slds-web-app
     restart: unless-stopped
     ports:
