@@ -4,6 +4,7 @@ import com.bank.slds.gateway.constant.ApiPath;
 import com.bank.slds.gateway.dto.AuthResponse;
 import com.bank.slds.gateway.dto.LoginRequest;
 import com.bank.slds.gateway.dto.TokenValidationResponse;
+import com.bank.slds.gateway.model.UserEntity;
 import com.bank.slds.gateway.repository.UserRepository;
 import com.bank.slds.gateway.response.GenericResponse;
 import com.bank.slds.gateway.response.MessageCode;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @RestController
 @RequestMapping(ApiPath.Auth.BASE)
@@ -32,35 +34,36 @@ public class AuthController {
     public Mono<ResponseEntity<GenericResponse<AuthResponse>>> login(@Valid @RequestBody LoginRequest request) {
         log.info("Authentication request received for user: {}", request.username());
 
-        return userRepository.findByUsername(request.username())
-            .map(user -> {
-                String role = user.getRole() != null ? user.getRole() : "CREDIT_OFFICER";
-                String userId = "USR-" + user.getId();
-                String branchCode = user.getBranchCode() != null ? user.getBranchCode() : "BRANCH_HO";
+        return Mono.fromCallable(() -> userRepository.findByUsername(request.username()))
+            .map(optionalUser -> {
+                if (optionalUser.isPresent()) {
+                    UserEntity user = optionalUser.get();
+                    String role = user.getRole() != null ? user.getRole() : "CREDIT_OFFICER";
+                    String userId = "USR-" + user.getId();
+                    String branchCode = user.getBranchCode() != null ? user.getBranchCode() : "BRANCH_HO";
 
-                String token = jwtService.generateToken(user.getUsername(), role, userId, branchCode);
-                String refreshToken = jwtService.generateRefreshToken(user.getUsername(), userId);
+                    String token = jwtService.generateToken(user.getUsername(), role, userId, branchCode);
+                    String refreshToken = jwtService.generateRefreshToken(user.getUsername(), userId);
 
-                AuthResponse authData = new AuthResponse(
-                    token,
-                    refreshToken,
-                    "Bearer",
-                    86400000L,
-                    userId,
-                    user.getUsername(),
-                    role,
-                    branchCode,
-                    LocalDateTime.now()
-                );
-                log.info("Successfully authenticated user '{}' from Liquibase DB with role '{}' and branch '{}'", user.getUsername(), role, branchCode);
-                return ResponseFactory.success(authData, MessageCode.LOGIN_SUCCESS);
+                    AuthResponse authData = new AuthResponse(
+                        token,
+                        refreshToken,
+                        "Bearer",
+                        86400000L,
+                        userId,
+                        user.getUsername(),
+                        role,
+                        branchCode,
+                        LocalDateTime.now()
+                    );
+                    log.info("Successfully authenticated user '{}' from JPA PostgreSQL with role '{}' and branch '{}'", user.getUsername(), role, branchCode);
+                    return ResponseFactory.success(authData, MessageCode.LOGIN_SUCCESS);
+                } else {
+                    return createFallbackAuthResponse(request);
+                }
             })
-            .defaultIfEmpty(
-                // Fallback for dynamic/dev login if user not pre-seeded in DB
-                createFallbackAuthResponse(request)
-            )
             .onErrorResume(e -> {
-                log.warn("DB query failed for user '{}', falling back to dynamic token issue. Error: {}", request.username(), e.getMessage());
+                log.warn("JPA DB query failed for user '{}', falling back to dynamic token issue. Error: {}", request.username(), e.getMessage());
                 return Mono.just(createFallbackAuthResponse(request));
             });
     }

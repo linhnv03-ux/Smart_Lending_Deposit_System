@@ -14,7 +14,7 @@
     <artifactId>slds-gateway-auth-service</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>SLDS API Gateway &amp; Auth Service</name>
-    <description>API Gateway &amp; Centralized Authentication/Authorization Service with JWT, Redis Rate Limiter, Liquibase DB, and Route Forwarding</description>
+    <description>API Gateway &amp; Centralized Authentication/Authorization Service with JWT, Redis Rate Limiter, JPA &amp; Liquibase DB, and Route Forwarding</description>
 
     <dependencies>
         <!-- Spring Cloud Gateway -->
@@ -29,27 +29,27 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- Spring Data R2DBC (Reactive DB access for WebFlux) -->
+        <!-- Spring Data JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-r2dbc</artifactId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- JDBC & H2 for Liquibase DB Migration on startup -->
+        <!-- PostgreSQL Driver -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
         </dependency>
+
+        <!-- H2 for Fallback -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>io.r2dbc</groupId>
-            <artifactId>r2dbc-h2</artifactId>
-            <scope>runtime</scope>
-        </dependency>
+
+        <!-- Liquibase DB Migration -->
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>

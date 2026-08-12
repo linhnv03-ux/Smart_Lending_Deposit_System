@@ -1,12 +1,13 @@
 package com.bank.slds.gateway.repository;
 
 import com.bank.slds.gateway.model.UserEntity;
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Mono;
+
+import java.util.Optional;
 
 @Repository
-public interface UserRepository extends R2dbcRepository<UserEntity, Long> {
-    Mono<UserEntity> findByUsername(String username);
-    Mono<UserEntity> findByEmail(String email);
+public interface UserRepository extends JpaRepository<UserEntity, Long> {
+    Optional<UserEntity> findByUsername(String username);
+    Optional<UserEntity> findByEmail(String email);
 }

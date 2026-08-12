@@ -1,12 +1,7 @@
 package com.bank.slds.gateway.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -14,34 +9,36 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("USERS")
+@Entity
+@Table(name = "users")
 public class UserEntity {
 
     @Id
-    @Column("ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column("USERNAME")
+    @Column(name = "username", nullable = false, unique = true)
     private String username;
 
-    @Column("EMAIL")
+    @Column(name = "email")
     private String email;
 
-    @Column("PASSWORD")
+    @Column(name = "password")
     private String password;
 
-    @Column("FULL_NAME")
+    @Column(name = "full_name")
     private String fullName;
 
-    @Column("ROLE")
+    @Column(name = "role")
     private String role;
 
-    @Column("BRANCH_CODE")
+    @Column(name = "branch_code")
     private String branchCode;
 
-    @Column("STATUS")
+    @Column(name = "status")
     private String status;
 
-    @Column("CREATED_AT")
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

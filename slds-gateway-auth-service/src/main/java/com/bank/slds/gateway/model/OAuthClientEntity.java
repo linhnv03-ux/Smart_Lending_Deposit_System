@@ -1,51 +1,47 @@
 package com.bank.slds.gateway.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("OAUTH_CLIENT_DETAILS")
+@Entity
+@Table(name = "oauth_client_details")
 public class OAuthClientEntity {
 
     @Id
-    @Column("CLIENT_ID")
+    @Column(name = "client_id")
     private String clientId;
 
-    @Column("RESOURCE_IDS")
+    @Column(name = "resource_ids")
     private String resourceIds;
 
-    @Column("CLIENT_SECRET")
+    @Column(name = "client_secret")
     private String clientSecret;
 
-    @Column("SCOPE")
+    @Column(name = "scope")
     private String scope;
 
-    @Column("AUTHORIZED_GRANT_TYPES")
+    @Column(name = "authorized_grant_types")
     private String authorizedGrantTypes;
 
-    @Column("WEB_SERVER_REDIRECT_URI")
+    @Column(name = "web_server_redirect_uri")
     private String webServerRedirectUri;
 
-    @Column("AUTHORITIES")
+    @Column(name = "authorities")
     private String authorities;
 
-    @Column("ACCESS_TOKEN_VALIDITY")
+    @Column(name = "access_token_validity")
     private Integer accessTokenValidity;
 
-    @Column("REFRESH_TOKEN_VALIDITY")
+    @Column(name = "refresh_token_validity")
     private Integer refreshTokenValidity;
 
-    @Column("ADDITIONAL_INFORMATION")
+    @Column(name = "additional_information")
     private String additionalInformation;
 
-    @Column("AUTOAPPROVE")
+    @Column(name = "autoapprove")
     private String autoapprove;
 }

@@ -1,11 +1,12 @@
 package com.bank.slds.gateway.repository;
 
 import com.bank.slds.gateway.model.OAuthClientEntity;
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Mono;
+
+import java.util.Optional;
 
 @Repository
-public interface OAuthClientRepository extends R2dbcRepository<OAuthClientEntity, String> {
-    Mono<OAuthClientEntity> findByClientId(String clientId);
+public interface OAuthClientRepository extends JpaRepository<OAuthClientEntity, String> {
+    Optional<OAuthClientEntity> findByClientId(String clientId);
 }
