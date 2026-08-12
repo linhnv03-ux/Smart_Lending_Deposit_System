@@ -1,0 +1,30 @@
+server:
+  port: 8083
+
+spring:
+  profiles:
+    active: dev
+  application:
+    name: slds-credit-assessment-service
+
+  activemq:
+    broker-url: tcp://${ACTIVEMQ_HOST:localhost}:61616
+    user: ${ACTIVEMQ_USER:admin}
+    password: ${ACTIVEMQ_PASSWORD:admin}
+    packages:
+      trust-all: true
+      trusted-packages: com.bank.slds.*
+
+elasticsearch:
+  uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+
+logging:
+  level:
+    com.bank.slds: DEBUG
+    org.springframework.web: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

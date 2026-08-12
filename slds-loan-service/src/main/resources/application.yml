@@ -35,6 +35,9 @@ spring:
     broker-url: tcp://${ACTIVEMQ_HOST:localhost}:61616
     user: ${ACTIVEMQ_USER:admin}
     password: ${ACTIVEMQ_PASSWORD:admin}
+    packages:
+      trust-all: true
+      trusted-packages: com.bank.slds.*
 
   jms:
     pub-sub-domain: false
