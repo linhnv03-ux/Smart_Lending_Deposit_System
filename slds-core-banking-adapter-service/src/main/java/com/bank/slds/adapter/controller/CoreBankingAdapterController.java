@@ -1,5 +1,6 @@
 package com.bank.slds.adapter.controller;
 
+import com.bank.slds.adapter.constant.ApiPath;
 import com.bank.slds.adapter.dto.*;
 import com.bank.slds.adapter.service.CoreBankingExecutionService;
 import jakarta.validation.Valid;
@@ -11,27 +12,27 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/core-banking")
+@RequestMapping(ApiPath.CoreBanking.BASE)
 @RequiredArgsConstructor
 @Slf4j
 public class CoreBankingAdapterController {
 
     private final CoreBankingExecutionService executionService;
 
-    @PostMapping("/journals/post")
+    @PostMapping(ApiPath.CoreBanking.JOURNALS_POST)
     public ResponseEntity<PostingResponse> postJournal(@Valid @RequestBody PostingRequest request) {
         log.info("REST Request to post Core Banking Journal: Type={}, Debit={}, Credit={}, Amount={}",
             request.journalType(), request.debitAccount(), request.creditAccount(), request.amount());
         return ResponseEntity.ok(executionService.postJournal(request));
     }
 
-    @GetMapping("/accounts/{accountNumber}/balance")
+    @GetMapping(ApiPath.CoreBanking.ACCOUNT_BALANCE)
     public ResponseEntity<AccountBalanceResponse> getAccountBalance(@PathVariable String accountNumber) {
         log.info("REST Request to query Core Banking balance for account: {}", accountNumber);
         return ResponseEntity.ok(executionService.getAccountBalance(accountNumber));
     }
 
-    @GetMapping("/circuit-breaker/status")
+    @GetMapping(ApiPath.CoreBanking.CIRCUIT_BREAKER_STATUS)
     public ResponseEntity<Map<String, Object>> getCircuitBreakerStatus() {
         return ResponseEntity.ok(Map.of(
             "service", "CoreBankingAdapterService",
@@ -40,7 +41,7 @@ public class CoreBankingAdapterController {
         ));
     }
 
-    @PostMapping("/circuit-breaker/toggle")
+    @PostMapping(ApiPath.CoreBanking.CIRCUIT_BREAKER_TOGGLE)
     public ResponseEntity<Map<String, Object>> toggleCircuitBreaker(@RequestBody Map<String, Boolean> body) {
         boolean simulateError = body.getOrDefault("simulateError", true);
         executionService.setSimulateFailure(simulateError);

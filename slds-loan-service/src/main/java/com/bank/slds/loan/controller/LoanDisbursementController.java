@@ -1,5 +1,6 @@
 package com.bank.slds.loan.controller;
 
+import com.bank.slds.loan.constant.ApiPath;
 import com.bank.slds.loan.dto.*;
 import com.bank.slds.loan.factory.InterestStrategyFactory;
 import com.bank.slds.loan.model.InterestType;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/loans")
+@RequestMapping(ApiPath.Loans.BASE)
 @RequiredArgsConstructor
 @Slf4j
 public class LoanDisbursementController {
@@ -27,21 +28,21 @@ public class LoanDisbursementController {
     private final CoreBankingAdapterService coreBankingAdapter;
     private final ElasticsearchAuditService auditService;
 
-    @PostMapping("/disburse")
+    @PostMapping(ApiPath.Loans.DISBURSE)
     public ResponseEntity<DisbursementResponse> disburseLoan(@Valid @RequestBody DisbursementRequest request) {
         log.info("REST Request for Loan Disbursement on ApplicationNo: {}", request.applicationNo());
         DisbursementResponse response = disbursementService.disburseLoan(request);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/repay")
+    @PostMapping(ApiPath.Loans.REPAY)
     public ResponseEntity<RepaymentResponse> processRepayment(@Valid @RequestBody RepaymentRequest request) {
         log.info("REST Request for Loan Repayment on ContractNo: {}", request.contractNo());
         RepaymentResponse response = repaymentService.processRepayment(request);
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/schedules/preview")
+    @GetMapping(ApiPath.Loans.SCHEDULES_PREVIEW)
     public ResponseEntity<List<RepaymentScheduleDto>> previewRepaymentSchedule(
             @RequestParam BigDecimal amount,
             @RequestParam BigDecimal rate,
@@ -53,7 +54,7 @@ public class LoanDisbursementController {
         return ResponseEntity.ok(schedule);
     }
 
-    @GetMapping("/circuit-breaker/status")
+    @GetMapping(ApiPath.Loans.CIRCUIT_BREAKER_STATUS)
     public ResponseEntity<Map<String, Object>> getCircuitBreakerStatus() {
         return ResponseEntity.ok(Map.of(
             "service", "CoreBankingAdapterService",
@@ -62,7 +63,7 @@ public class LoanDisbursementController {
         ));
     }
 
-    @PostMapping("/circuit-breaker/toggle")
+    @PostMapping(ApiPath.Loans.CIRCUIT_BREAKER_TOGGLE)
     public ResponseEntity<Map<String, Object>> toggleCircuitBreaker(@RequestBody Map<String, Boolean> body) {
         boolean simulateError = body.getOrDefault("simulateError", true);
         coreBankingAdapter.setSimulateFailure(simulateError);
@@ -72,7 +73,7 @@ public class LoanDisbursementController {
         ));
     }
 
-    @GetMapping("/audit-logs")
+    @GetMapping(ApiPath.Loans.AUDIT_LOGS)
     public ResponseEntity<List<AuditLogDto>> getAuditLogs(@RequestParam(required = false) String query) {
         return ResponseEntity.ok(auditService.getAuditLogs(query));
     }

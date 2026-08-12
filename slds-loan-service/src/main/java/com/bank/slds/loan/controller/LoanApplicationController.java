@@ -1,5 +1,6 @@
 package com.bank.slds.loan.controller;
 
+import com.bank.slds.loan.constant.ApiPath;
 import com.bank.slds.loan.dto.LoanApplicationRequest;
 import com.bank.slds.loan.dto.LoanApplicationResponse;
 import com.bank.slds.loan.service.LoanApplicationService;
@@ -10,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/loans/applications")
+@RequestMapping(ApiPath.Loans.BASE + ApiPath.Loans.APPLICATIONS)
 @RequiredArgsConstructor
 @Slf4j
 public class LoanApplicationController {
