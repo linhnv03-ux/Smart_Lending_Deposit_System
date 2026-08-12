@@ -7,6 +7,24 @@ spring:
   application:
     name: slds-gateway-auth-service
 
+  # JDBC Datasource for Liquibase Migrations on Startup
+  datasource:
+    url: jdbc:h2:mem:slds_auth_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+
+  # R2DBC Reactive Datasource for WebFlux Reactive DB Access
+  r2dbc:
+    url: r2dbc:h2:mem:///slds_auth_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    username: sa
+    password: password
+
+  # Liquibase Database ChangeLog Migration Config
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
   data:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:${REDIS_HOST:localhost}}
@@ -36,10 +54,12 @@ spring:
 jwt:
   secret: slds_super_secret_jwt_key_2026_bank_secure_key_123456
   expiration-ms: 86400000
+  refresh-expiration-ms: 604800000
 
 logging:
   level:
     com.bank.slds: DEBUG
+    org.liquibase: INFO
     org.springframework.cloud.gateway: INFO
     org.springframework.web: INFO
 
