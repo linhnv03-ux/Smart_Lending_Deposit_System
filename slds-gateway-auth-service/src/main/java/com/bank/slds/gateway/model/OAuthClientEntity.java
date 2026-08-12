@@ -12,37 +12,40 @@ import org.springframework.data.relational.core.mapping.Table;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("oauth_client_details")
+@Table("OAUTH_CLIENT_DETAILS")
 public class OAuthClientEntity {
 
     @Id
-    @Column("client_id")
+    @Column("CLIENT_ID")
     private String clientId;
 
-    @Column("resource_ids")
+    @Column("RESOURCE_IDS")
     private String resourceIds;
 
-    @Column("client_secret")
+    @Column("CLIENT_SECRET")
     private String clientSecret;
 
+    @Column("SCOPE")
     private String scope;
 
-    @Column("authorized_grant_types")
+    @Column("AUTHORIZED_GRANT_TYPES")
     private String authorizedGrantTypes;
 
-    @Column("web_server_redirect_uri")
+    @Column("WEB_SERVER_REDIRECT_URI")
     private String webServerRedirectUri;
 
+    @Column("AUTHORITIES")
     private String authorities;
 
-    @Column("access_token_validity")
+    @Column("ACCESS_TOKEN_VALIDITY")
     private Integer accessTokenValidity;
 
-    @Column("refresh_token_validity")
+    @Column("REFRESH_TOKEN_VALIDITY")
     private Integer refreshTokenValidity;
 
-    @Column("additional_information")
+    @Column("ADDITIONAL_INFORMATION")
     private String additionalInformation;
 
+    @Column("AUTOAPPROVE")
     private String autoapprove;
 }

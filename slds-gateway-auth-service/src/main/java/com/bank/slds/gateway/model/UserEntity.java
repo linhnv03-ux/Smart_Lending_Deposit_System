@@ -14,28 +14,34 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("users")
+@Table("USERS")
 public class UserEntity {
 
     @Id
+    @Column("ID")
     private Long id;
 
+    @Column("USERNAME")
     private String username;
 
+    @Column("EMAIL")
     private String email;
 
+    @Column("PASSWORD")
     private String password;
 
-    @Column("full_name")
+    @Column("FULL_NAME")
     private String fullName;
 
+    @Column("ROLE")
     private String role;
 
-    @Column("branch_code")
+    @Column("BRANCH_CODE")
     private String branchCode;
 
+    @Column("STATUS")
     private String status;
 
-    @Column("created_at")
+    @Column("CREATED_AT")
     private LocalDateTime createdAt;
 }

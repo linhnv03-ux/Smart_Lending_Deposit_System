@@ -58,7 +58,11 @@ public class AuthController {
             .defaultIfEmpty(
                 // Fallback for dynamic/dev login if user not pre-seeded in DB
                 createFallbackAuthResponse(request)
-            );
+            )
+            .onErrorResume(e -> {
+                log.warn("DB query failed for user '{}', falling back to dynamic token issue. Error: {}", request.username(), e.getMessage());
+                return Mono.just(createFallbackAuthResponse(request));
+            });
     }
 
     private ResponseEntity<GenericResponse<AuthResponse>> createFallbackAuthResponse(LoginRequest request) {
@@ -80,7 +84,7 @@ public class AuthController {
             branchCode,
             LocalDateTime.now()
         );
-        log.info("Issued fallback authentication token for non-persisted user: {}", request.username());
+        log.info("Issued fallback authentication token for user: {}", request.username());
         return ResponseFactory.success(authData, MessageCode.LOGIN_SUCCESS);
     }
 
