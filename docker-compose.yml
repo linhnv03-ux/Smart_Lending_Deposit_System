@@ -9,7 +9,7 @@ services:
     container_name: slds-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: slds_db
       POSTGRES_USER: slds_user

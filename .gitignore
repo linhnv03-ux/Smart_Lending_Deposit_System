@@ -1,8 +1,81 @@
+# Compiled Java & Maven Build Outputs
+target/
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+# Node.js & Web Assets
 node_modules/
-build/
 dist/
+build/
 coverage/
+.vite/
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE & Editor Project Files
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+bin/
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# NetBeans
+/nbproject/private/
+/build/
+/nbbuild/
+/dist/
+/nbdist/
+
+# OS Specific Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*~
+*.bak
+*.tmp
+
+# Logs & Environment Variables
 *.log
-.env*
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 !.env.example
+
+# Local Database & Docker Volume Exports
+postgres_data/
+redis_data/
+activemq_data/
+es_data/
+oracle_data/

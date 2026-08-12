@@ -8,9 +8,9 @@ spring:
     name: slds-loan-service
 
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/slds_loans
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5433}/slds_db
     username: ${POSTGRES_USER:slds_user}
-    password: ${POSTGRES_PASSWORD:slds_secret_2026}
+    password: ${POSTGRES_PASSWORD:slds_password}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -29,7 +29,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:redis_secret}
+      password: ${REDIS_PASSWORD:}
 
   activemq:
     broker-url: tcp://${ACTIVEMQ_HOST:localhost}:61616
