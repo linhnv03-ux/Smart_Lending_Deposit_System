@@ -2,36 +2,49 @@ server:
   port: 8080
 
 spring:
+  profiles:
+    active: dev
   application:
     name: slds-gateway-auth-service
 
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      host: ${SPRING_DATA_REDIS_HOST:${REDIS_HOST:localhost}}
+      port: ${SPRING_DATA_REDIS_PORT:${REDIS_PORT:6379}}
+      password: ${SPRING_DATA_REDIS_PASSWORD:${REDIS_PASSWORD:}}
 
   cloud:
     gateway:
       routes:
-        # Route to Loan Service
-        - id: loan-service-route
-          uri: ${LOAN_SERVICE_URI:http://localhost:8081}
+        - id: loan-service
+          uri: ${LOAN_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/api/v1/loans/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 10 # 10 requests per second
-                redis-rate-limiter.burstCapacity: 20
-                key-resolver: "#{@userKeyResolver}"
-
-        # Route to Auth Service internal endpoints
-        - id: auth-service-route
-          uri: http://localhost:8080
+        - id: deposit-service
+          uri: ${DEPOSIT_SERVICE_URL:http://localhost:8082}
           predicates:
-            - Path=/api/v1/auth/**
+            - Path=/api/v1/deposits/**
+        - id: credit-assessment-service
+          uri: ${ASSESSMENT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/assessment/**
+        - id: core-banking-adapter-service
+          uri: ${CORE_BANKING_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/core-banking/**
 
 jwt:
-  secret: slds_super_secret_jwt_key_bank_grade_2026_java17_spring_boot_3
-  expiration-ms: 86400000 # 24 Hours
+  secret: slds_super_secret_jwt_key_2026_bank_secure_key_123456
+  expiration-ms: 86400000
+
+logging:
+  level:
+    com.bank.slds: DEBUG
+    org.springframework.cloud.gateway: INFO
+    org.springframework.web: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
