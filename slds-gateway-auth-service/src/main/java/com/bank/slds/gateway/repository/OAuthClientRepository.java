@@ -1,5 +1,3 @@
-package com.bank.slds.gateway.model; // wait, repository package
-
 package com.bank.slds.gateway.repository;
 
 import com.bank.slds.gateway.model.OAuthClientEntity;
