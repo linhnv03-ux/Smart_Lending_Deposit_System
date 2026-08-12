@@ -48,9 +48,9 @@ public class JwtService {
 
     private void configureVerification(JwtParserBuilder builder) {
         if (certificateKeyProvider != null && certificateKeyProvider.getPublicKey() != null) {
-            builder.verifyWith(certificateKeyProvider.getPublicKey());
+            builder.setSigningKey(certificateKeyProvider.getPublicKey());
         } else {
-            builder.verifyWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)));
+            builder.setSigningKey(getSigningKey());
         }
     }
 
@@ -65,10 +65,10 @@ public class JwtService {
         Date expiryDate = new Date(now.getTime() + expirationMs);
 
         String token = Jwts.builder()
-            .claims(claims)
-            .subject(username)
-            .issuedAt(now)
-            .expiration(expiryDate)
+            .setClaims(claims)
+            .setSubject(username)
+            .setIssuedAt(now)
+            .setExpiration(expiryDate)
             .signWith(getSigningKey())
             .compact();
 
@@ -89,10 +89,10 @@ public class JwtService {
         Date expiryDate = new Date(now.getTime() + refreshExpirationMs);
 
         return Jwts.builder()
-            .claims(claims)
-            .subject(username)
-            .issuedAt(now)
-            .expiration(expiryDate)
+            .setClaims(claims)
+            .setSubject(username)
+            .setIssuedAt(now)
+            .setExpiration(expiryDate)
             .signWith(getSigningKey())
             .compact();
     }
@@ -113,8 +113,8 @@ public class JwtService {
     }
 
     public Claims getClaims(String token) {
-        JwtParserBuilder builder = Jwts.parser();
+        JwtParserBuilder builder = Jwts.parserBuilder();
         configureVerification(builder);
-        return builder.build().parseSignedClaims(token).getPayload();
+        return builder.build().parseClaimsJws(token).getBody();
     }
 }
