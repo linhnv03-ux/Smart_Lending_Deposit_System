@@ -2,6 +2,7 @@ package com.bank.slds.deposit.dto;
 
 import com.bank.slds.deposit.model.InterestPayoutType;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 public record DepositProductDto(
@@ -12,4 +13,6 @@ public record DepositProductDto(
     InterestPayoutType payoutType,
     BigDecimal minimumDepositAmount,
     boolean active
-) {}
+) implements Serializable {
+    private static final long serialVersionUID = 1L;
+}
