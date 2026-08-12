@@ -7,20 +7,26 @@ spring:
   application:
     name: slds-gateway-auth-service
 
-  # JDBC Datasource for Liquibase Migrations on Startup
   datasource:
-    url: jdbc:h2:mem:slds_auth_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: password
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5433}/slds_db
+    username: ${POSTGRES_USER:slds_user}
+    password: ${POSTGRES_PASSWORD:slds_password}
+    driver-class-name: org.postgresql.Driver
 
-  # R2DBC Reactive Datasource for WebFlux Reactive DB Access
   r2dbc:
-    url: r2dbc:h2:mem:///slds_auth_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
-    username: sa
-    password: password
+    url: r2dbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5433}/slds_db
+    username: ${POSTGRES_USER:slds_user}
+    password: ${POSTGRES_PASSWORD:slds_password}
 
-  # Liquibase Database ChangeLog Migration Config
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
