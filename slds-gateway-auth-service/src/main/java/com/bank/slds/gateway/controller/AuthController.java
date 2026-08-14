@@ -3,6 +3,7 @@ package com.bank.slds.gateway.controller;
 import com.bank.slds.gateway.constant.ApiPath;
 import com.bank.slds.gateway.dto.AuthResponse;
 import com.bank.slds.gateway.dto.LoginRequest;
+import com.bank.slds.gateway.dto.LogoutResponse;
 import com.bank.slds.gateway.dto.TokenValidationResponse;
 import com.bank.slds.gateway.model.UserEntity;
 import com.bank.slds.gateway.repository.UserRepository;
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @RestController
 @RequestMapping(ApiPath.Auth.BASE)
@@ -89,6 +89,50 @@ public class AuthController {
         );
         log.info("Issued fallback authentication token for user: {}", request.username());
         return ResponseFactory.success(authData, MessageCode.LOGIN_SUCCESS);
+    }
+
+    @PostMapping(ApiPath.Auth.LOGOUT)
+    public Mono<ResponseEntity<GenericResponse<LogoutResponse>>> logout(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.warn("Logout requested without valid Authorization Bearer header");
+            LogoutResponse response = new LogoutResponse("anonymous", "No active session found", LocalDateTime.now());
+            return Mono.just(ResponseFactory.success(response, MessageCode.LOGOUT_SUCCESS));
+        }
+
+        String token = authHeader.substring(7);
+        String username;
+        try {
+            var claims = jwtService.getClaims(token);
+            username = claims.getSubject() != null ? claims.getSubject() : "anonymous";
+        } catch (Exception e) {
+            log.debug("Could not parse token claims for logout subject extraction: {}", e.getMessage());
+            username = "anonymous";
+        }
+
+        final String finalUsername = username;
+        log.info("Logout request received for user: {}", finalUsername);
+
+        return jwtService.invalidateToken(token)
+            .map(invalidated -> {
+                log.info("Successfully invalidated JWT token and revoked Redis session for user: {}", finalUsername);
+                LogoutResponse logoutData = new LogoutResponse(
+                    finalUsername,
+                    "Session successfully terminated and token blacklisted in Redis",
+                    LocalDateTime.now()
+                );
+                return ResponseFactory.success(logoutData, MessageCode.LOGOUT_SUCCESS);
+            })
+            .onErrorResume(e -> {
+                log.warn("Error during token invalidation for user '{}': {}", finalUsername, e.getMessage());
+                LogoutResponse fallbackData = new LogoutResponse(
+                    finalUsername,
+                    "Session cleared locally",
+                    LocalDateTime.now()
+                );
+                return Mono.just(ResponseFactory.success(fallbackData, MessageCode.LOGOUT_SUCCESS));
+            });
     }
 
     @GetMapping(ApiPath.Auth.VALIDATE)
