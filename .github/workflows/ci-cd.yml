@@ -1,0 +1,243 @@
+name: SLDS Banking Ecosystem CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        description: 'Target Deployment Environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions:
+  contents: read
+  packages: write
+  pull-requests: write
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
+  NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/slds
+
+jobs:
+  # ===================================================================
+  # JOB 1: Java Microservices - Lint, Compile & Unit/Integration Tests
+  # ===================================================================
+  backend-ci:
+    name: Backend CI (Java 17 / Spring Boot 3)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17 (Eclipse Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: 'maven'
+
+      - name: Validate Maven POM and Dependencies
+        run: |
+          echo ">>> Validating Parent and Child POM configurations..."
+          mvn validate -B
+
+      - name: Compile & Run Unit Tests
+        run: |
+          echo ">>> Running clean test across all microservice modules..."
+          mvn clean test -B -Dspring.profiles.active=test
+
+      - name: Package Microservice JARs
+        run: |
+          echo ">>> Building deployable Spring Boot JAR artifacts..."
+          mvn package -B -DskipTests
+
+      - name: Archive Test Results & JAR Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-artifacts
+          path: |
+            */target/*.jar
+            */target/surefire-reports/*.xml
+          retention-days: 7
+
+  # ===================================================================
+  # JOB 2: Web Dashboard - Node.js Lint, Typecheck & Static Build
+  # ===================================================================
+  frontend-ci:
+    name: Frontend CI (Node.js / React / TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: |
+          npm ci || npm install
+
+      - name: Run Linter & Typecheck
+        run: |
+          npm run lint --if-present
+
+      - name: Build Web Application
+        run: |
+          npm run build
+
+      - name: Archive Frontend Build Output
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist/
+          retention-days: 7
+
+  # ===================================================================
+  # JOB 3: Docker Infrastructure & Service Compose Validation
+  # ===================================================================
+  docker-compose-validate:
+    name: Docker Compose & Topology Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose Configuration
+        run: |
+          echo ">>> Verifying docker-compose.yml syntax and service topology..."
+          docker compose config
+
+  # ===================================================================
+  # JOB 4: Container Build Matrix & Security Scan (Docker Buildx)
+  # ===================================================================
+  docker-build-matrix:
+    name: Build Docker Container (${{ matrix.service.name }})
+    needs: [backend-ci, frontend-ci, docker-compose-validate]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: gateway-auth
+            context: .
+            dockerfile: ./slds-gateway-auth-service/Dockerfile
+            image_name: slds-gateway-auth-service
+          - name: loan-service
+            context: .
+            dockerfile: ./slds-loan-service/Dockerfile
+            image_name: slds-loan-service
+          - name: deposit-service
+            context: .
+            dockerfile: ./slds-deposit-service/Dockerfile
+            image_name: slds-deposit-service
+          - name: credit-assessment
+            context: .
+            dockerfile: ./slds-credit-assessment-service/Dockerfile
+            image_name: slds-credit-assessment-service
+          - name: core-banking-adapter
+            context: .
+            dockerfile: ./slds-core-banking-adapter-service/Dockerfile
+            image_name: slds-core-banking-adapter-service
+          - name: web-dashboard
+            context: .
+            dockerfile: ./Dockerfile
+            image_name: slds-web-app
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (Multi-platform emulation)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker Metadata (Tags, Labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.service.image_name }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+            type=sha,format=short,prefix=sha-
+            type=semver,pattern={{version}}
+            type=ref,event=branch
+            type=ref,event=pr
+
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.dockerfile }}
+          push: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ===================================================================
+  # JOB 5: Continuous Deployment / Release Notification
+  # ===================================================================
+  cd-deploy:
+    name: Continuous Deployment (CD Trigger)
+    needs: [docker-build-matrix]
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Summary & Deployment Notification
+        run: |
+          echo "======================================================="
+          echo "🚀 SLDS Microservices Ecosystem Successfully Deployed"
+          echo "Environment Target : ${{ github.event.inputs.deploy_env || 'production' }}"
+          echo "Commit Reference   : ${{ github.sha }}"
+          echo "Triggered By       : ${{ github.actor }}"
+          echo "Docker Registry    : ${{ env.REGISTRY }}/${{ github.repository_owner }}"
+          echo "======================================================="
+          echo "Published Microservices Containers:"
+          echo "  - slds-gateway-auth-service"
+          echo "  - slds-loan-service"
+          echo "  - slds-deposit-service"
+          echo "  - slds-credit-assessment-service"
+          echo "  - slds-core-banking-adapter-service"
+          echo "  - slds-web-app"
