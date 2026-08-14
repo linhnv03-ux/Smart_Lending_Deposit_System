@@ -24,4 +24,8 @@ public enum MessageCode {
         this.code = code;
         this.messageKey = messageKey;
     }
+
+    public String getMessage() {
+        return this.messageKey;
+    }
 }
