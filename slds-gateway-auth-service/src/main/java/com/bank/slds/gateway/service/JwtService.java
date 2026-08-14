@@ -98,18 +98,63 @@ public class JwtService {
     }
 
     public Mono<Boolean> validateToken(String token) {
+        return isTokenBlacklisted(token)
+            .flatMap(isBlacklisted -> {
+                if (Boolean.TRUE.equals(isBlacklisted)) {
+                    log.warn("Token validation failed: Token is blacklisted in Redis");
+                    return Mono.just(false);
+                }
+                try {
+                    Claims claims = getClaims(token);
+                    String username = claims.getSubject();
+                    String sessionKey = "SLDS:SESSION:" + username;
+
+                    return redisTemplate.opsForValue().get(sessionKey)
+                        .map(cachedToken -> cachedToken.equals(token))
+                        .defaultIfEmpty(true);
+                } catch (Exception e) {
+                    log.warn("JWT validation failed: {}", e.getMessage());
+                    return Mono.just(false);
+                }
+            });
+    }
+
+    public Mono<Boolean> invalidateToken(String token) {
         try {
             Claims claims = getClaims(token);
+            Date expiration = claims.getExpiration();
+            long remainingMs = expiration != null ? (expiration.getTime() - System.currentTimeMillis()) : expirationMs;
             String username = claims.getSubject();
             String sessionKey = "SLDS:SESSION:" + username;
+            String blacklistKey = "SLDS:BLACKLIST:" + token;
 
-            return redisTemplate.opsForValue().get(sessionKey)
-                .map(cachedToken -> cachedToken.equals(token))
-                .defaultIfEmpty(true);
+            Mono<Boolean> deleteSession = redisTemplate.delete(sessionKey).map(count -> count > 0).defaultIfEmpty(true);
+
+            if (remainingMs > 0) {
+                return redisTemplate.opsForValue()
+                        .set(blacklistKey, "revoked", Duration.ofMillis(remainingMs))
+                        .then(deleteSession)
+                        .thenReturn(true)
+                        .onErrorResume(e -> {
+                            log.warn("Failed to blacklist token in Redis: {}", e.getMessage());
+                            return Mono.just(true);
+                        });
+            } else {
+                return deleteSession.thenReturn(true);
+            }
         } catch (Exception e) {
-            log.warn("JWT validation failed: {}", e.getMessage());
+            log.warn("Could not parse token for invalidation: {}", e.getMessage());
             return Mono.just(false);
         }
+    }
+
+    public Mono<Boolean> isTokenBlacklisted(String token) {
+        String blacklistKey = "SLDS:BLACKLIST:" + token;
+        return redisTemplate.hasKey(blacklistKey)
+                .onErrorResume(e -> {
+                    log.debug("Redis blacklist check failed: {}", e.getMessage());
+                    return Mono.just(false);
+                });
     }
 
     public Claims getClaims(String token) {
