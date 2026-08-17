@@ -9,7 +9,73 @@
       "name": "Service 1: API Gateway & Auth Service",
       "item": [
         {
-          "name": "1.1 Login & Obtain JWT Token",
+          "name": "1.1 User Register (Lưu tạm Redis TTL 10 phút - Không ghi DB)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"linhnv_customer\",\n  \"email\": \"linhnv03@ominext.com\",\n  \"password\": \"BankSecure@2026\",\n  \"fullName\": \"Nguyễn Văn Linh\",\n  \"phone\": \"0988123456\",\n  \"role\": \"CUSTOMER\",\n  \"branchCode\": \"BRANCH_HO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Kiểm tra email/username chưa tồn tại. Lưu tạm thông tin User + OTP vào Redis với TTL = 10 phút (Key: pending_user:{email}). Không ghi Database để tránh rác DB."
+          }
+        },
+        {
+          "name": "1.2 Verify OTP & Hoàn tất Đăng ký (Insert DB + Cấp JWT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"linhnv03@ominext.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "verify-otp"]
+            },
+            "description": "Đọc dữ liệu từ Redis theo Key. Nếu đúng OTP: INSERT thông tin User từ Redis vào PostgreSQL DB -> Xóa Key Redis -> Cấp token JWT đăng nhập thành công."
+          }
+        },
+        {
+          "name": "1.3 Resend OTP (Gia hạn 10 phút)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"linhnv03@ominext.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/resend-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "resend-otp"]
+            },
+            "description": "Cấp lại mã OTP mới và gia hạn thêm 10 phút TTL trong Redis."
+          }
+        },
+        {
+          "name": "1.4 Login & Obtain JWT Token",
           "request": {
             "method": "POST",
             "header": [
@@ -31,7 +97,25 @@
           }
         },
         {
-          "name": "1.2 Validate JWT Token",
+          "name": "1.5 Logout & Blacklist Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            },
+            "description": "Terminates active session and blacklists JWT token in Redis."
+          }
+        },
+        {
+          "name": "1.6 Validate JWT Token",
           "request": {
             "method": "GET",
             "header": [

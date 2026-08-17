@@ -8,6 +8,9 @@ public final class ApiPath {
         private Auth() {}
         public static final String BASE = "/api/v1/auth";
         public static final String LOGIN = "/login";
+        public static final String REGISTER = "/register";
+        public static final String VERIFY_OTP = "/verify-otp";
+        public static final String RESEND_OTP = "/resend-otp";
         public static final String LOGOUT = "/logout";
         public static final String VALIDATE = "/validate";
         public static final String REFRESH = "/refresh";
